@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>freepik__weight_scale_with__tmk__word.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +19,7 @@
     <None Remove="Fonts\DS-DIGIB.TTF" />
     <None Remove="Fonts\DS-DIGII.TTF" />
     <None Remove="Fonts\DS-DIGIT.TTF" />
+    <None Remove="freepik__weight_scale_with__tmk__word.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +45,13 @@
     <Resource Include="Fonts\DS-DIGIT.TTF">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="freepik__weight_scale_with__tmk__word.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="MainWindow.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Page>
   </ItemGroup>
 
 </Project>
