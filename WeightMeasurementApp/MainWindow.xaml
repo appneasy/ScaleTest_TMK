@@ -1,0 +1,237 @@
+﻿<Window x:Class="WeightMeasurementApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Weight Measurement System" Height="800" Width="1000">
+
+
+    <Window.Resources>
+        <!-- ใช้ชื่อ family ตามที่ฟอนต์ระบุในระบบ -->
+        <FontFamily x:Key="DigitalFont">pack://application:,,,/Fonts/#DS-DIGITAL</FontFamily>
+    </Window.Resources>
+
+    <DockPanel LastChildFill="True">
+        <!-- เมนูมาตรฐานด้านบน -->
+        <Menu DockPanel.Dock="Top" Background="#F0F0F0">
+            <MenuItem Header="ตั้งค่า SerialPort" x:Name="menuSerialPort" Visibility="Collapsed">
+                <MenuItem Header="เลือกพอร์ต" Click="MenuSerialPortSettings_Click" />
+            </MenuItem>
+            <MenuItem Header="View Log" x:Name="menuViewLog" Click="MenuViewLog_Click"/>
+            <MenuItem Header="Exit" x:Name="menuExit" Click="MenuExit_Click"/>
+        </Menu>
+
+        <!-- StatusBar ด้านล่าง -->
+        <StatusBar DockPanel.Dock="Bottom" Height="30">
+            <StatusBarItem>
+                <TextBlock x:Name="statusBarText" Text="Status: Disconnected" Foreground="Red"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- แบ่งพื้นที่หลักเป็นซ้าย-ขวา -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="500" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ส่วนด้านซ้าย (หน้าจอหลัก) -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <!-- แถวสำหรับแสดงน้ำหนัก -->
+                    <RowDefinition Height="Auto" MinHeight="215"/>
+                    <!-- แถวสำหรับการตั้งค่า -->
+                    <RowDefinition/>
+                    <!-- แถวสำหรับปุ่ม Connect/Disconnect -->
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- แสดงน้ำหนัก -->
+                <Label x:Name="lblWeightDisplay"
+                       Grid.Row="0"
+                       FontSize="160"
+                       HorizontalAlignment="Left"
+                       Content="00000"
+                       Margin="0,20,0,0" 
+                       FontFamily="{StaticResource DigitalFont}" 
+                       Foreground="#FF02612F" Width="403" VerticalAlignment="Top" BorderBrush="#FF0CC349" Height="166" HorizontalContentAlignment="Right"/>
+
+                <!-- Green Circle -->
+                <Ellipse x:Name="greenCircle"
+                         Width="37" 
+                         Height="37" 
+                         HorizontalAlignment="Left" 
+                         VerticalAlignment="Center" 
+                         Margin="438,0,0,0" 
+                         Fill="Green" 
+                         Visibility="Collapsed"/>
+
+                <!-- ส่วนของการตั้งค่า -->
+                <GroupBox Grid.Row="1" 
+                          Header="การตั้งค่าพอร์ตอนุกรม" 
+                          Margin="20,10,20,20" 
+                          Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Labels -->
+                        <Label Grid.Row="0" Grid.Column="0" Content="COM Port:" Margin="5"/>
+                        <Label Grid.Row="1" Grid.Column="0" Content="Baud Rate:" Margin="5"/>
+                        <Label Grid.Row="2" Grid.Column="0" Content="Parity:" Margin="5"/>
+                        <Label Grid.Row="3" Grid.Column="0" Content="Data Bits:" Margin="5"/>
+                        <Label Grid.Row="4" Grid.Column="0" Content="Stop Bits:" Margin="5"/>
+                        <Label Grid.Row="5" Grid.Column="0" Content="Handshake:" Margin="5"/>
+
+                        <!-- ComboBoxes -->
+                        <ComboBox x:Name="cmbComPort" Grid.Row="0" Grid.Column="1" Margin="5"/>
+                        <ComboBox x:Name="cmbBaudRate" Grid.Row="1" Grid.Column="1" Margin="5">
+                            <ComboBoxItem Content="1200" IsSelected="True"/>
+                            <ComboBoxItem Content="2400"/>
+                            <ComboBoxItem Content="4800"/>
+                            <ComboBoxItem Content="9600"/>
+                            <ComboBoxItem Content="19200"/>
+                            <ComboBoxItem Content="115200"/>
+                        </ComboBox>
+                        <ComboBox x:Name="cmbParity" Grid.Row="2" Grid.Column="1" Margin="5">
+                            <ComboBoxItem Content="None" IsSelected="True"/>
+                            <ComboBoxItem Content="Odd"/>
+                            <ComboBoxItem Content="Even"/>
+                        </ComboBox>
+                        <ComboBox x:Name="cmbDataBits" Grid.Row="3" Grid.Column="1" Margin="5">
+                            <ComboBoxItem Content="8"/>
+                            <ComboBoxItem Content="7" IsSelected="True"/>
+                        </ComboBox>
+                        <ComboBox x:Name="cmbStopBits" Grid.Row="4" Grid.Column="1" Margin="5">
+                            <ComboBoxItem Content="One" IsSelected="True"/>
+                            <ComboBoxItem Content="Two"/>
+                        </ComboBox>
+                        <ComboBox x:Name="cmbHandshake" Grid.Row="5" Grid.Column="1" Margin="5">
+                            <ComboBoxItem Content="None" IsSelected="True"/>
+                            <ComboBoxItem Content="XOnXOff"/>
+                            <ComboBoxItem Content="RequestToSend"/>
+                        </ComboBox>
+                    </Grid>
+                </GroupBox>
+
+                <!-- ปุ่ม Connect/Disconnect ด้านล่างมุมขวา -->
+                <Grid Grid.Row="2" Margin="20,3,20,-3">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="btnConnect" 
+                                Content="Connect" 
+                                Width="100" 
+                                Height="30"
+                                Margin="0,0,10,0"
+                                Click="BtnConnect_Click"/>
+                        <Button x:Name="btnDisconnect" 
+                                Content="Disconnect" 
+                                Width="100" 
+                                Height="30"
+                                IsEnabled="False" 
+                                Click="BtnDisconnect_Click"/>
+                    </StackPanel>
+                </Grid>
+                <Border BorderBrush="#FF48C5E6" BorderThickness="3" HorizontalAlignment="Left" Height="120" Margin="5,46,0,0" VerticalAlignment="Top" Width="398" RenderTransformOrigin="0.502,0.476" CornerRadius="5,5,5,5"/>
+            </Grid>
+
+            <!-- เส้นแบ่งระหว่างซ้าย-ขวา -->
+            <GridSplitter Grid.Column="1" 
+                          Width="5" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Stretch" 
+                          Background="#FFBCBCBC"/>
+
+            <GroupBox Grid.Column="2" Header="Console Log" Margin="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
+                        <!-- Row 0: Hex Pattern -->
+                        <RowDefinition Height="2*"/>
+                        <!-- Row 1: Hex → ASCII -->
+                        <RowDefinition Height="3*"/>
+                        <!-- Row 2: Main Log -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Row 3: Buttons -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0: Hex Pattern Log -->
+                    <TextBox x:Name="txtHexPatternLog" 
+                 Grid.Row="0"
+                 IsReadOnly="True" 
+                 TextWrapping="Wrap" 
+                 VerticalScrollBarVisibility="Auto"
+                 FontFamily="Consolas"
+                 FontSize="12"
+                 AcceptsReturn="True"
+                 Background="#FFF0F0F0"
+                 Margin="0,0,0,3"
+                 ToolTip="Raw HEX pattern"/>
+
+                    <!-- Row 1: Hex → ASCII Log -->
+                    <TextBox x:Name="txtHexToAsciiLog" 
+                 Grid.Row="1"
+                 IsReadOnly="True" 
+                 TextWrapping="Wrap" 
+                 VerticalScrollBarVisibility="Auto"
+                 FontFamily="Consolas"
+                 FontSize="12"
+                 AcceptsReturn="True"
+                 Background="#FFF8F8F8"
+                 Margin="0,0,0,3"
+                 ToolTip="Hex translated to ASCII"/>
+
+                    <!-- Row 2: Main Log -->
+                    <TextBox x:Name="txtConsoleLog" 
+                 Grid.Row="2"
+                 IsReadOnly="True" 
+                 TextWrapping="Wrap" 
+                 VerticalScrollBarVisibility="Auto"
+                 FontFamily="Consolas"
+                 FontSize="12"
+                 AcceptsReturn="True"
+                 Background="#F5F5F5"
+                 Margin="0"/>
+
+                    <!-- Row 3: Buttons -->
+                    <StackPanel Grid.Row="3" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,5,0,0">
+                        <Button x:Name="BtnSaveHexPattern" 
+                    Content="SaveHex" 
+                    Width="80" Height="25" 
+                    Margin="0,0,5,0"
+                    Click="BtnSaveHexPattern_Click" IsEnabled="False"/>
+                        <Button x:Name="BtnSaveAsciiLog" 
+                    Content="SaveAscii" 
+                    Width="80" Height="25" 
+                    Margin="0,0,5,0"
+                    Click="BtnSaveAsciiLog_Click" IsEnabled="False"/>
+                        <Button x:Name="btnClearLog" 
+                    Content="Clear Log" 
+                    Width="80" Height="25" 
+                    Margin="0,0,5,0"
+                    Click="BtnClearLog_Click"/>
+                        <Button x:Name="btnSaveLog" 
+                    Content="Save Log" 
+                    Width="80" Height="25"
+                    Click="BtnSaveLog_Click"
+                    IsEnabled="False" />
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+
+        </Grid>
+    </DockPanel>
+
+
+</Window>

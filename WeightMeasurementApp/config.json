@@ -1,0 +1,8 @@
+{
+    "ComPort": "COM7",
+    "BaudRate": 1200,
+    "Parity": "None",
+    "DataBits": 8,
+    "StopBits": "One",
+    "Handshake": "None"
+}
