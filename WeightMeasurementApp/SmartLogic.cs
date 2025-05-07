@@ -354,53 +354,7 @@ namespace WeightMeasurementApp
         //version 4 10.22 01/05/2025
         private double lastDisplayedWeight = 0;
         private DateTime lastWeightTime = DateTime.MinValue;
-        //public double ExtractWeightFromPattern(string rawData)
-        //{
-
-        //    if (string.IsNullOrEmpty(rawData))
-        //    {
-        //        logger?.Log("Raw data is null or empty.");
-        //        return 0;
-        //    }
-
-        //    int startPos = _config.WeightStartPosition;
-        //    int endPos = _config.WeightEndPosition;
-        //    int expectedDigits = _config.WeightDigits;
-        //    double maxWeight = _config.WeightMaxValue;
-        //    double minWeight = _config.WeightMinValue;
-
-        //    if (rawData.Length < endPos)
-        //    {
-        //        logger?.Log($"Raw data is too short. Expected at least {endPos} characters.");
-        //        return 0;
-        //    }
-
-        //    string weightStr = rawData.Substring(startPos, endPos - startPos).Trim(); // ✨ ใช้ Trim() เพื่อตัดช่องว่าง
-
-        //    // ✨ ปรับ Regex ให้รองรับตัวเลขน้อยกว่า expectedDigits หลักได้  
-        //    if (!Regex.IsMatch(weightStr, $"^\\d{{1,{expectedDigits}}}(\\.\\d+)?$"))
-        //    {
-        //        logger?.Log($"Extracted weight '{weightStr}' does not match the expected format.");
-        //        return 0;
-        //    }
-
-        //    if (double.TryParse(weightStr, out double weight))
-        //    {
-        //        if (weight > maxWeight)
-        //        {
-        //            logger?.Log($"Extracted weight {weight} exceeds the maximum allowed value of {maxWeight}");
-        //            return 0;
-        //        }
-
-        //        logger?.Log($"Successfully extracted weight: {weight}");
-        //        return weight;
-        //    }
-        //    else
-        //    {
-        //        logger?.Log($"Failed to parse the extracted weight string '{weightStr}' into a number.");
-        //        return 0;
-        //    }
-
+       
 
 
 

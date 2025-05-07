@@ -79,7 +79,17 @@ namespace WeightMeasurementApp
             }
         }
 
+        private void ShowCurrentConfigInTextBox()
+        {
+            if (_config == null) return;
 
+            string info = $"Port: {_config.ComPort}, Baud: {_config.BaudRate}, Parity: {_config.Parity}, " +
+                          $"DataBits: {_config.DataBits}, StopBits: {_config.StopBits}, Handshake: {_config.Handshake}\n" +
+                          $"WeightStart: {_config.WeightStartPosition}, End: {_config.WeightEndPosition}, Digits: {_config.WeightDigits}\n" +
+                          $"StableDelay: {_config.WeightStableDelay} ms, Min: {_config.WeightMinValue}, Max: {_config.WeightMaxValue}";
+
+            txtCurrentConfigInfo.Text = info;
+        }
 
         /// <summary>
         /// Initialize the log displays
@@ -197,6 +207,7 @@ namespace WeightMeasurementApp
             var configWindow = new SerialPortConfigWindow();
             configWindow.Owner = this;
             bool? result = configWindow.ShowDialog();
+            ShowCurrentConfigInTextBox();
 
             // ✅ ถ้า user กด Save และมีการเปลี่ยนแปลง → โหลด config ใหม่และอัปเดต UI
             if (result == true)
@@ -204,6 +215,7 @@ namespace WeightMeasurementApp
                 _config = ConfigManager.LoadConfig();
                 currentConfig = _config;
                 ApplyConfigToUI();
+                ShowCurrentConfigInTextBox();
                 LogToConsole("โหลด config ใหม่หลังจากการบันทึกสำเร็จ");
             }
         }
@@ -638,43 +650,7 @@ namespace WeightMeasurementApp
                 return;
             }
 
-            //bool weightChanged = (lastValidWeight == -1 || Math.Abs(weight - lastValidWeight) >= smartLogic.GetNoiseThreshold(lastValidWeight)); // ✨ ใช้เมธอด GetNoiseThreshold จาก SmartLogic
-
-            //if (!weightChanged)
-            //{
-            //    if (lastStableTime == null)
-            //    {
-            //        lastStableTime = DateTime.Now;
-            //        Console.WriteLine("เริ่มจับเวลานิ่ง");
-            //        logger?.Log("เริ่มจับเวลานิ่ง");
-            //    }
-
-            //    TimeSpan stableTime = DateTime.Now - lastStableTime.Value;
-            //    bool isStableForDelay = stableTime.TotalMilliseconds >= _config.WeightStableDelay;
-
-            //    if (isStableForDelay && !isCurrentlyStable)
-            //    {
-            //        SetStableState(true);
-            //        Console.WriteLine("เปลี่ยนสถานะเป็นนิ่ง");
-            //        logger?.Log("เปลี่ยนสถานะเป็นนิ่ง");
-            //    }
-
-            //    DisplayWeight(lastValidWeight, isCurrentlyStable || isStableForDelay);
-
-            //    Console.WriteLine($"น้ำหนักนิ่ง: {lastValidWeight}, นิ่งเป็นเวลา {stableTime.TotalSeconds:F1} วินาที, " +
-            //                     $"นิ่งนานกว่า Delay: {isStableForDelay}, สถานะปัจจุบัน: {(isCurrentlyStable ? "นิ่ง" : "ไม่นิ่ง")}");
-            //    logger?.Log($"น้ำหนักนิ่ง: {lastValidWeight}, นิ่งเป็นเวลา {stableTime.TotalSeconds:F1} วินาที, " +
-            //                $"นิ่งนานกว่า Delay: {isStableForDelay}, สถานะปัจจุบัน: {(isCurrentlyStable ? "นิ่ง" : "ไม่นิ่ง")}");
-            //}
-            //else
-            //{
-            //    lastStableTime = null;
-            //    lastValidWeight = weight;
-            //    SetStableState(false);
-            //    DisplayWeight(weight, false);
-            //    Console.WriteLine($"น้ำหนักเปลี่ยนเป็น: {weight} - รีเซ็ตสถานะนิ่ง");
-            //    logger?.Log($"น้ำหนักเปลี่ยนเป็น: {weight} - รีเซ็ตสถานะนิ่ง");
-            //}
+           
             bool weightChanged = Math.Abs(extractedWeight - lastValidWeight) > 0.1;
 
             if (weightChanged)
@@ -698,169 +674,7 @@ namespace WeightMeasurementApp
           //  lastWeightDisplayed = weight;
         }
 
-        //private void ProcessWeight(string rawData)
-        //{
-        //    Console.WriteLine($"ข้อมูลที่ได้รับ: \"{rawData}\" (ความยาว: {rawData.Length})");
-        //    logger?.Log($"ข้อมูลที่ได้รับ: \"{rawData}\" (ความยาว: {rawData.Length})");
-
-        //    // เก็บข้อมูลดิบล่าสุดไว้ใช้ในการเรียนรู้
-        //    lastRawData = rawData;
-
-        //    // กรณีไม่มีข้อมูล - รักษาสถานะปัจจุบันไว้
-        //    if (string.IsNullOrWhiteSpace(rawData))
-        //    {
-        //        Console.WriteLine("ไม่มีข้อมูล - รักษาสถานะปัจจุบัน");
-        //        logger?.Log("ไม่มีข้อมูล - รักษาสถานะปัจจุบัน");
-        //        return;
-        //    }
-
-        //    // สำคัญมาก: ตรวจสอบว่าค่าน้ำหนักปรากฏอยู่ในข้อมูลดิบหรือไม่
-        //    // ถ้าพบตัวเลขที่น่าจะเป็นน้ำหนักโดยตรง ให้ใช้ค่านั้น
-        //    double directExtractedWeight = ExtractDirectWeight(rawData);
-        //    if (directExtractedWeight > 0)
-        //    {
-        //        logger?.Log($"พบค่าน้ำหนักโดยตรงในข้อมูลดิบ: {directExtractedWeight}");
-
-        //        // ตรวจสอบความสมเหตุสมผล
-        //        if (previousWeight > 0)
-        //        {
-        //            double change = Math.Abs(directExtractedWeight - previousWeight);
-        //            double threshold = smartLogic.GetNoiseThreshold(previousWeight);
-
-        //            if (change > threshold)
-        //            {
-        //                // ถ้าค่าต่างมากเกินไป ให้ตรวจสอบความต่อเนื่อง
-        //                logger?.Log($"🚨 น้ำหนักเปลี่ยนแปลงเร็ว: {change} > {threshold}");
-        //                if (consistentHighWeightCount > 0)
-        //                {
-        //                    consistentHighWeightCount++;
-
-        //                    // ถ้าพบค่าสูงติดต่อกัน 3 ครั้ง ให้ยอมรับว่าเป็นค่าที่ถูกต้อง
-        //                    if (consistentHighWeightCount >= 3)
-        //                    {
-        //                        logger?.Log($"ยอมรับค่าน้ำหนักที่เปลี่ยนแปลงมาก เนื่องจากพบต่อเนื่อง");
-        //                        previousWeight = directExtractedWeight;
-        //                        ResetStableState(); // รีเซ็ตสถานะความนิ่ง
-        //                        DisplayWeight(directExtractedWeight, false);
-        //                        return;
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    consistentHighWeightCount = 1;
-        //                }
-        //            }
-        //            else
-        //            {
-        //                if (consistentHighWeightCount > 0)
-        //                {
-        //                    logger?.Log($"❌ ยกเลิกการนับต่อเนื่อง: การเปลี่ยนแปลงกลับมาต่ำกว่า threshold");
-        //                }
-
-        //                consistentHighWeightCount = 0;
-        //            }
-        //        }
-        //    }
-
-        //    // ประมวลผลด้วย SmartLogic ตามปกติ
-        //    double weight = smartLogic.ProcessRawData(rawData);
-        //    bool isStable = smartLogic.IsStable();
-        //    bool isNoise = smartLogic.IsNoise(weight);
-
-        //    Console.WriteLine($"น้ำหนักที่ประมวลผลแล้ว: {weight}, เป็นเสียงรบกวน: {isNoise}, นิ่ง: {isStable}");
-        //    logger?.Log($"น้ำหนักที่ประมวลผลแล้ว: {weight}, เป็นเสียงรบกวน: {isNoise}, นิ่ง: {isStable}");
-
-        //    // กรณีน้ำหนักน้อยมาก ให้แสดงเป็น 0
-        //    if (weight <= 5)
-        //    {
-        //        lastValidWeight = 0;
-        //        SetStableState(false);
-        //        DisplayWeight(0, false);
-        //        return;
-        //    }
-
-        //    if (directExtractedWeight > 0 && !IsDirectValueNoise(directExtractedWeight))
-        //    {
-        //        weight = directExtractedWeight;
-        //        isNoise = false;
-        //    }
-        //    // ข้ามกรณีตรวจพบเสียงรบกวน
-
-        //    if (isNoise)
-        //    {
-
-        //        // เพิ่มการตรวจสอบ - ถ้าตรวจพบ noise ติดต่อกันหลายครั้ง อาจเป็นค่าจริง
-        //        noiseDetectionCount++;
-
-        //        if (noiseDetectionCount > 5)
-        //        {
-        //            logger?.Log("ยอมรับค่าที่ถูกระบุเป็น noise เนื่องจากพบต่อเนื่องหลายครั้ง");
-        //            isNoise = false;
-        //            noiseDetectionCount = 0;
-        //        }
-        //        else
-        //        {
-        //            logger?.Log("ข้ามเนื่องจากเป็นเสียงรบกวน");
-        //            return;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        noiseDetectionCount = 0;
-        //    }
-
-        //    // ตรวจสอบว่าน้ำหนักมีการเปลี่ยนแปลงเกินเกณฑ์หรือไม่
-        //    bool weightChanged = (lastValidWeight == -1 || Math.Abs(weight - lastValidWeight) >= NoiseThreshold);
-
-        //    if (!weightChanged)
-        //    {
-        //        // น้ำหนักนิ่ง เริ่มจับเวลา
-        //        if (lastStableTime == null)
-        //        {
-        //            lastStableTime = DateTime.Now;  // เริ่มนับเวลาเมื่อน้ำหนักเริ่มนิ่ง
-        //            Console.WriteLine("เริ่มจับเวลานิ่ง");
-        //            logger?.Log("เริ่มจับเวลานิ่ง"); // ✅ บันทึกการเริ่มจับเวลานิ่งลงใน log
-        //        }
-
-        //        // คำนวณระยะเวลาที่น้ำหนักนิ่ง
-        //        TimeSpan stableTime = DateTime.Now - lastStableTime.Value;
-        //        bool isStableForThreeSeconds = stableTime.TotalSeconds >= stableTimeLimit;
-
-        //        // ถ้านิ่งครบ 3 วินาที ให้เปลี่ยนสถานะเป็นนิ่ง
-        //        if (isStableForThreeSeconds && !isCurrentlyStable)
-        //        {
-        //            SetStableState(true);
-        //            Console.WriteLine("เปลี่ยนสถานะเป็นนิ่ง");
-        //            logger?.Log("เปลี่ยนสถานะเป็นนิ่ง"); // ✅ บันทึกการเปลี่ยนสถานะลงใน log
-
-
-        //        }
-
-        //        // แสดงน้ำหนักพร้อมสีที่เหมาะสมตามสถานะความนิ่ง
-        //        DisplayWeight(lastValidWeight, isCurrentlyStable || isStableForThreeSeconds);
-
-        //        Console.WriteLine($"น้ำหนักนิ่ง: {lastValidWeight}, นิ่งเป็นเวลา {stableTime.TotalSeconds:F1} วินาที, " +
-        //                         $"นิ่งครบ 3 วินาที: {isStableForThreeSeconds}, สถานะปัจจุบัน: {(isCurrentlyStable ? "นิ่ง" : "ไม่นิ่ง")}");
-        //        logger?.Log($"น้ำหนักนิ่ง: {lastValidWeight}, นิ่งเป็นเวลา {stableTime.TotalSeconds:F1} วินาที, " +
-        //                         $"นิ่งครบ 3 วินาที: {isStableForThreeSeconds}, สถานะปัจจุบัน: {(isCurrentlyStable ? "นิ่ง" : "ไม่นิ่ง")}"); // ✅ บันทึกสถานะน้ำหนักลงใน log
-        //    }
-        //    else
-        //    {
-        //        // น้ำหนักเปลี่ยนแปลง รีเซ็ตเวลานิ่ง
-        //        lastStableTime = null;
-        //        lastValidWeight = weight;
-        //        SetStableState(false);
-        //        DisplayWeight(weight, false);
-        //        Console.WriteLine($"น้ำหนักเปลี่ยนเป็น: {weight} - รีเซ็ตสถานะนิ่ง");
-        //        logger?.Log($"น้ำหนักเปลี่ยนเป็น: {weight} - รีเซ็ตสถานะนิ่ง"); // ✅ บันทึกการเปลี่ยนแปลงน้ำหนักลงใน log
-        //    }
-
-        //    lastWeightDisplayed = weight;
-        //}
-
-        //// ฟังก์ชั่นสำหรับสกัดค่าน้ำหนักโดยตรงจากข้อมูลดิบ
-        //private double MIN_VALID_WEIGHT = 5.0;  // ค่าน้ำหนักขั้นต่ำ
-        //private double MAX_VALID_WEIGHT = 80000.00; // ค่าน้ำหนักสูงสุด
+     
 
 
         private double ExtractDirectWeight(string rawData)
@@ -975,44 +789,7 @@ namespace WeightMeasurementApp
                 logger?.Log($"เกิดข้อผิดพลาดในการแสดงน้ำหนัก: {ex.Message}");
             }
         }
-        //private void DisplayWeight(double weight, bool isStable)
-        //{
-        //    try
-        //    {
-        //        // จัดรูปแบบเป็นตัวเลข 5 หลัก นำหน้าด้วย 0
-        //        string formattedWeight = ((int)Math.Round(weight)).ToString("D5");
-
-        //        // *** แก้ไขเพิ่มเติม: ใช้ Dispatcher.BeginInvoke เพื่อให้แน่ใจว่า UI update ได้ถูกต้อง
-        //        // และล้างการ update ที่อาจค้างอยู่ใน queue
-        //        Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
-        //        {
-        //            lblWeightDisplay.Content = formattedWeight;
-
-        //            // *** แก้ไขเพิ่มเติม: สร้าง SolidColorBrush ใหม่ทุกครั้งและเปลี่ยนสีตามสถานะนิ่ง
-        //            Color textColor = isStable ? Colors.Green : Colors.Black;
-        //            lblWeightDisplay.Foreground = new SolidColorBrush(textColor);
-
-        //            // ถ้าน้ำหนักเป็น 0 และไม่นิ่ง ให้แสดงเป็นสีแดง
-        //            if (weight == 0 && !isStable)
-        //            {
-        //                lblWeightDisplay.Foreground = new SolidColorBrush(Colors.Red);
-        //            }
-
-        //            // บันทึกสถานะสีปัจจุบัน
-        //            Console.WriteLine($"UI Update: น้ำหนัก {formattedWeight}, สี: {(isStable ? "เขียว" : "ดำ")}");
-        //            logger?.Log($"UI Update: น้ำหนัก {formattedWeight}, สี: {(isStable ? "เขียว" : "ดำ")}"); // ✅ บันทึกการอัปเดต UI ลงใน log
-        //        }));
-
-        //        // Log ข้อมูลสถานะ
-        //        Console.WriteLine($"แสดงน้ำหนัก: {formattedWeight}, นิ่ง: {isStable}, สี: {(isStable ? "เขียว" : "ดำ")}");
-        //        logger?.Log($"แสดงน้ำหนัก: {formattedWeight}, นิ่ง: {isStable}, สี: {(isStable ? "เขียว" : "ดำ")}"); // ✅ บันทึกการแสดงน้ำหนักลงใน log    
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"เกิดข้อผิดพลาดในการแสดงน้ำหนัก: {ex.Message}");
-        //        logger?.Log($"เกิดข้อผิดพลาดในการแสดงน้ำหนัก: {ex.Message}"); // ✅ บันทึกข้อผิดพลาดในการแสดงน้ำหนักลงใน log
-        //    }
-        //}
+        
 
         /// <summary>
         /// อัปเดตข้อความสถานะและสี
@@ -1283,25 +1060,6 @@ namespace WeightMeasurementApp
 
         }
         
-        //// Train ฟังก์ชันสามารถทำให้ง่ายลง:
-        //public void Train(List<string> rawDataSamples, List<double> knownWeights)
-        //{
-        //    if (rawDataSamples.Count != knownWeights.Count || rawDataSamples.Count == 0)
-        //    {
-        //        logger?.Log("Cannot train: Invalid data samples");
-        //        return;
-        //    }
 
-        //    logger?.Log($"Training system with {rawDataSamples.Count} samples");
-
-        //    for (int i = 0; i < rawDataSamples.Count; i++)
-        //    {
-        //        string rawData = rawDataSamples[i];
-        //        double weight = knownWeights[i];
-        //        logger?.Log($"Learning sample: \"{rawData}\" → {weight}kg");
-        //    }
-
-        //    logger?.Log("Training completed");
-        //}
     }
 }

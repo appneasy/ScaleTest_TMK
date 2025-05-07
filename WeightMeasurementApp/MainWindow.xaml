@@ -84,6 +84,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- Labels -->
@@ -93,6 +94,7 @@
                         <Label Grid.Row="3" Grid.Column="0" Content="Data Bits:" Margin="5"/>
                         <Label Grid.Row="4" Grid.Column="0" Content="Stop Bits:" Margin="5"/>
                         <Label Grid.Row="5" Grid.Column="0" Content="Handshake:" Margin="5"/>
+                        <Label Grid.Row="6" Grid.Column="0" Content="Config Info:" Margin="5"/>
 
                         <!-- ComboBoxes -->
                         <ComboBox x:Name="cmbComPort" Grid.Row="0" Grid.Column="1" Margin="5"/>
@@ -122,6 +124,12 @@
                             <ComboBoxItem Content="XOnXOff"/>
                             <ComboBoxItem Content="RequestToSend"/>
                         </ComboBox>
+                        <TextBox Grid.Row="6" Grid.Column="1"
+x:Name="txtCurrentConfigInfo"
+Margin="5,5,5,-116"
+IsReadOnly="True"
+TextWrapping="Wrap"
+VerticalScrollBarVisibility="Auto"/>
                     </Grid>
                 </GroupBox>
 
