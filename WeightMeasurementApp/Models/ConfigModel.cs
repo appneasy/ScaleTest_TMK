@@ -17,12 +17,12 @@ namespace WeightMeasurementApp.Models
         public bool AutoConnect { get; set; } = false;
 
         // ✨ เพิ่มตัวแปรสำหรับการตั้งค่ารูปแบบข้อมูลน้ำหนัก
-        public int WeightStartPosition { get; set; }
-        public int WeightEndPosition { get; set; }
-        public int WeightDigits { get; set; }
-        public int WeightStableDelay { get; set; } // เวลาที่ต้องนิ่งเพื่อถือว่าเสถียร (ms)
-        public double WeightMaxValue { get; set; }
-        public double WeightMinValue { get; set; }
+        public int WeightStartPosition { get; set; } = 5;  // ตำแหน่งเริ่มต้นของน้ำหนัก
+        public int WeightEndPosition { get; set; } = 13;    // ตำแหน่งสิ้นสุดของน้ำหนัก
+        public int WeightDigits { get; set; } = 6;         // จำนวนตัวเลขของน้ำหนัก
+        public int WeightStableDelay { get; set; } = 500; // ระยะเวลาในการตรวจสอบน้ำหนักนิ่ง (ms)
+        public double WeightMinValue { get; set; } = 5.0;  // น้ำหนักต่ำสุดที่ใช้งานได้
+        public double WeightMaxValue { get; set; } = 80000.0; // น้ำหนักสูงสุดที่ใช้งานได้
 
         public ConfigModel()
         {
@@ -34,13 +34,7 @@ namespace WeightMeasurementApp.Models
             Handshake = "None";
             AutoConnect = false;
 
-            // ✨ กำหนดค่าเริ่มต้นสำหรับการตั้งค่ารูปแบบข้อมูลน้ำหนัก
-            WeightStartPosition = 5;
-            WeightEndPosition = 13;
-            WeightDigits = 6;
-            WeightStableDelay = 500; // 1.5 วินาที  
-            WeightMaxValue = 80000.0;
-            WeightMinValue = 5.0; // ✨ เพิ่มค่าเริ่มต้น  
+
         }
 
     }

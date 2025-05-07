@@ -135,17 +135,20 @@
 
                         <!-- คอลัมน์ขวา -->
                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
+
                             <TextBlock Text="เวลาหน่วงสำหรับน้ำหนักคงที่ (ms):"/>
                             <TextBox x:Name="txtWeightStableDelay" Text="1500"/>
 
                             <TextBlock Text="ค่าน้ำหนักสูงสุด:"/>
                             <TextBox x:Name="txtWeightMaxValue" Text="80000"/>
-
                             <CheckBox x:Name="chkAutoConnect_config" 
-                                    Content="เชื่อมต่ออัตโนมัติเมื่อเปิดโปรแกรม" 
-                                    Margin="0,15,0,0"/>
+Content="เชื่อมต่ออัตโนมัติเมื่อเปิดโปรแกรม" 
+Margin="0,15,0,0"/>
+
                         </StackPanel>
+                  
                     </Grid>
+
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>

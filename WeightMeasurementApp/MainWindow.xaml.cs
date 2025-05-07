@@ -43,13 +43,17 @@ namespace WeightMeasurementApp
             // กำหนดค่าให้กับฟิลด์ที่เป็น non-nullable ทั้งหมด
             logger = ConsoleLogger.Instance; // ✅ สร้าง shared logger ที่พร้อมใช้งานก่อน
             smartLogic = new SmartLogic(logger,_config!);
-            _config = new ConfigModel();
-            currentConfig = _config;
+
+            LoadConfig();
+
+         //   _config = new ConfigModel();
+         //   currentConfig = _config;
 
             serialPort = new SerialPort();
             InitializeSerialPort();
             LoadAvailablePorts();
 
+            ShowCurrentConfigInTextBox();
 
             // สร้าง SmartLogic และฝึกด้วยข้อมูลตัวอย่าง
             InitializeSmartLogic();
@@ -61,7 +65,6 @@ namespace WeightMeasurementApp
             // Initialize log displays
             InitializeLogDisplays();
 
-            LoadConfig();
             ApplyConfigToUI();
 
             // อัพเดทสถานะปุ่มเริ่มต้น
