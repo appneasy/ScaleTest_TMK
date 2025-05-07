@@ -27,11 +27,11 @@ namespace WeightMeasurementApp
         private DateTime? lastStableTime = null;   // เวลาที่น้ำหนักเริ่มนิ่ง
         private const double stableThreshold = 0.5; // การเปลี่ยนแปลงที่ยอมรับได้
         private const int stableTimeLimit = 1;     // เวลานิ่งที่ต้องการ (วินาที)
-        private double lastWeightDisplayed = -1;   // น้ำหนักที่แสดงล่าสุด
+    //    private double lastWeightDisplayed = -1;   // น้ำหนักที่แสดงล่าสุด
         private bool isCurrentlyStable = false;    // สถานะปัจจุบัน - ว่านิ่งหรือไม่
 
         private ConsoleLogger logger; // ✅ ประกาศตัวแปร Logger
-        private ConfigModel currentConfig; // <<== เพิ่มบรรทัดนี้
+       // private ConfigModel currentConfig; // <<== เพิ่มบรรทัดนี้
         private ConfigModel _config;
         private bool isConnected = false;
 
@@ -49,7 +49,7 @@ namespace WeightMeasurementApp
          //   _config = new ConfigModel();
          //   currentConfig = _config;
 
-            serialPort = new SerialPort();
+         //   serialPort = new SerialPort();
             InitializeSerialPort();
             LoadAvailablePorts();
 
@@ -137,59 +137,145 @@ namespace WeightMeasurementApp
             }
         }
 
-        
+
 
         private void LoadConfig()
         {
             try
             {
                 _config = ConfigManager.LoadConfig();
+                logger.Log("Config loaded successfully.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.Log($"Error loading config: {ex.Message}. Using default config.");
                 _config = new ConfigModel();
             }
         }
-
         private void ApplyConfigToUI()
         {
-            // ตรวจสอบ currentConfig ไม่เป็น null ก่อน
-            if (currentConfig == null)
+            try
             {
-                return; // หาก currentConfig เป็น null จะไม่ทำอะไร
+                // ตรวจสอบว่า ComboBox ไม่เป็น null และตั้งค่าตามที่โหลดมา
+                if (cmbComPort != null && _config != null)
+                {
+                    var portNames = SerialPort.GetPortNames();
+                    if (portNames.Contains(_config.ComPort))
+                    {
+                        cmbComPort.SelectedItem = _config.ComPort;
+                    }
+                    else if (cmbComPort.Items.Count > 0)
+                    {
+                        cmbComPort.SelectedIndex = 0;
+                    }
+                }
+
+                if (cmbBaudRate != null && _config != null)
+                {
+                    foreach (ComboBoxItem item in cmbBaudRate.Items)
+                    {
+                        if (item.Content?.ToString() == _config.BaudRate.ToString())
+                        {
+                            cmbBaudRate.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+
+                if (cmbParity != null && _config != null)
+                {
+                    foreach (ComboBoxItem item in cmbParity.Items)
+                    {
+                        if (item.Content?.ToString() == _config.Parity)
+                        {
+                            cmbParity.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+
+                if (cmbDataBits != null && _config != null)
+                {
+                    foreach (ComboBoxItem item in cmbDataBits.Items)
+                    {
+                        if (item.Content?.ToString() == _config.DataBits.ToString())
+                        {
+                            cmbDataBits.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+
+                if (cmbStopBits != null && _config != null)
+                {
+                    foreach (ComboBoxItem item in cmbStopBits.Items)
+                    {
+                        if (item.Content?.ToString() == _config.StopBits)
+                        {
+                            cmbStopBits.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+
+                if (cmbHandshake != null && _config != null)
+                {
+                    foreach (ComboBoxItem item in cmbHandshake.Items)
+                    {
+                        if (item.Content?.ToString() == _config.Handshake)
+                        {
+                            cmbHandshake.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+
+                LogToConsole("อัปเดต UI ตาม Config เรียบร้อยแล้ว");
             }
-
-            //// ตรวจสอบ ComboBox ไม่เป็น null และ currentConfig.ComPort ไม่เป็น null
-            //if (cmbComPort != null && !string.IsNullOrEmpty(currentConfig.ComPort))
-            //{
-            //    cmbComPort.SelectedItem = currentConfig.ComPort;
-            //}
-
-            //if (cmbBaudRate != null && currentConfig.BaudRate != null)
-            //{
-            //    cmbBaudRate.SelectedItem = currentConfig.BaudRate.ToString();
-            //}
-
-            //if (cmbParity != null && currentConfig.Parity != null)
-            //{
-            //    cmbParity.SelectedItem = currentConfig.Parity;
-            //}
-
-            //if (cmbDataBits != null && currentConfig.DataBits != null)
-            //{
-            //    cmbDataBits.SelectedItem = currentConfig.DataBits.ToString();
-            //}
-
-            //if (cmbStopBits != null && currentConfig.StopBits != null)
-            //{
-            //    cmbStopBits.SelectedItem = currentConfig.StopBits;
-            //}
-
-            //if (cmbHandshake != null && currentConfig.Handshake != null)
-            //{
-            //    cmbHandshake.SelectedItem = currentConfig.Handshake;
-            //}
+            catch (Exception ex)
+            {
+                LogToConsole($"เกิดข้อผิดพลาดในการอัปเดต UI: {ex.Message}");
+            }
         }
+        //private void ApplyConfigToUI()
+        //{
+        //    // ตรวจสอบ currentConfig ไม่เป็น null ก่อน
+        //    if (currentConfig == null)
+        //    {
+        //        return; // หาก currentConfig เป็น null จะไม่ทำอะไร
+        //    }
+
+        //    //// ตรวจสอบ ComboBox ไม่เป็น null และ currentConfig.ComPort ไม่เป็น null
+        //    //if (cmbComPort != null && !string.IsNullOrEmpty(currentConfig.ComPort))
+        //    //{
+        //    //    cmbComPort.SelectedItem = currentConfig.ComPort;
+        //    //}
+
+        //    //if (cmbBaudRate != null && currentConfig.BaudRate != null)
+        //    //{
+        //    //    cmbBaudRate.SelectedItem = currentConfig.BaudRate.ToString();
+        //    //}
+
+        //    //if (cmbParity != null && currentConfig.Parity != null)
+        //    //{
+        //    //    cmbParity.SelectedItem = currentConfig.Parity;
+        //    //}
+
+        //    //if (cmbDataBits != null && currentConfig.DataBits != null)
+        //    //{
+        //    //    cmbDataBits.SelectedItem = currentConfig.DataBits.ToString();
+        //    //}
+
+        //    //if (cmbStopBits != null && currentConfig.StopBits != null)
+        //    //{
+        //    //    cmbStopBits.SelectedItem = currentConfig.StopBits;
+        //    //}
+
+        //    //if (cmbHandshake != null && currentConfig.Handshake != null)
+        //    //{
+        //    //    cmbHandshake.SelectedItem = currentConfig.Handshake;
+        //    //}
+        //}
 
         //private void AutoConnectIfNeeded()
         //{
@@ -202,27 +288,48 @@ namespace WeightMeasurementApp
         /// <summary>
         /// Event handler for the Serial Port Settings menu item
         /// </summary>
+        //private void MenuSerialPortSettings_Click(object sender, RoutedEventArgs e)
+        //{
+        //    //var configWindow = new SerialPortConfigWindow();
+        //    //configWindow.Owner = this;
+        //    //configWindow.ShowDialog();
+        //    var configWindow = new SerialPortConfigWindow();
+        //    configWindow.Owner = this;
+        //    bool? result = configWindow.ShowDialog();
+        //    ShowCurrentConfigInTextBox();
+
+        //    // ✅ ถ้า user กด Save และมีการเปลี่ยนแปลง → โหลด config ใหม่และอัปเดต UI
+        //    if (result == true)
+        //    {
+        //        _config = ConfigManager.LoadConfig();
+        //        currentConfig = _config;
+        //        ApplyConfigToUI();
+        //        ShowCurrentConfigInTextBox();
+        //        LogToConsole("โหลด config ใหม่หลังจากการบันทึกสำเร็จ");
+        //    }
+        //}
         private void MenuSerialPortSettings_Click(object sender, RoutedEventArgs e)
         {
-            //var configWindow = new SerialPortConfigWindow();
-            //configWindow.Owner = this;
-            //configWindow.ShowDialog();
             var configWindow = new SerialPortConfigWindow();
             configWindow.Owner = this;
             bool? result = configWindow.ShowDialog();
-            ShowCurrentConfigInTextBox();
 
-            // ✅ ถ้า user กด Save และมีการเปลี่ยนแปลง → โหลด config ใหม่และอัปเดต UI
+            // ถ้า user กด Save และมีการเปลี่ยนแปลง → โหลด config ใหม่และอัปเดต UI
             if (result == true)
             {
                 _config = ConfigManager.LoadConfig();
-                currentConfig = _config;
-                ApplyConfigToUI();
                 ShowCurrentConfigInTextBox();
+
+                // อัปเดต SmartLogic ด้วย Config ใหม่ถ้าจำเป็น
+                if (!isConnected)
+                {
+                    smartLogic = new SmartLogic(logger, _config);
+                }
+
+                ApplyConfigToUI();
                 LogToConsole("โหลด config ใหม่หลังจากการบันทึกสำเร็จ");
             }
         }
-
         /// <summary>
         /// Event handler for the View Log menu item
         /// </summary>
@@ -621,7 +728,7 @@ namespace WeightMeasurementApp
             // น้ำหนักมากมาก (รถบรรทุก)
             return Math.Max(1000, currentWeight * 0.05); // 5% สำหรับน้ำหนักมากมาก และมีค่าขั้นต่ำ
         }
-        private int noiseDetectionCount = 0;
+       // private int noiseDetectionCount = 0;
 
 
         private void ProcessWeight(string rawData)
