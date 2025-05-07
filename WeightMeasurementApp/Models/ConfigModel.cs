@@ -16,6 +16,14 @@ namespace WeightMeasurementApp.Models
         public string Handshake { get; set; }
         public bool AutoConnect { get; set; } = false;
 
+        // ✨ เพิ่มตัวแปรสำหรับการตั้งค่ารูปแบบข้อมูลน้ำหนัก
+        public int WeightStartPosition { get; set; }
+        public int WeightEndPosition { get; set; }
+        public int WeightDigits { get; set; }
+        public int WeightStableDelay { get; set; } // เวลาที่ต้องนิ่งเพื่อถือว่าเสถียร (ms)
+        public double WeightMaxValue { get; set; }
+        public double WeightMinValue { get; set; }
+
         public ConfigModel()
         {
             ComPort = "COM1";
@@ -25,6 +33,14 @@ namespace WeightMeasurementApp.Models
             StopBits = "1";
             Handshake = "None";
             AutoConnect = false;
+
+            // ✨ กำหนดค่าเริ่มต้นสำหรับการตั้งค่ารูปแบบข้อมูลน้ำหนัก
+            WeightStartPosition = 5;
+            WeightEndPosition = 13;
+            WeightDigits = 6;
+            WeightStableDelay = 500; // 1.5 วินาที  
+            WeightMaxValue = 80000.0;
+            WeightMinValue = 5.0; // ✨ เพิ่มค่าเริ่มต้น  
         }
 
     }

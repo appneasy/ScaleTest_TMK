@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using WeightMeasurementApp.Models;
 
 namespace WeightMeasurementApp
 {
@@ -53,6 +54,11 @@ namespace WeightMeasurementApp
         // ประวัติการวัดน้ำหนัก
         private const int HISTORY_SIZE = 15; // เพิ่มจาก 10 เป็น 15 เพื่อให้มีข้อมูลมากขึ้นในการวิเคราะห์
         private List<WeightSample> weightHistory = new List<WeightSample>();
+
+
+        private readonly ConfigModel _config; // ✨ เพิ่มฟิลด์สำหรับเก็บ ConfigModel
+        private readonly Queue<double> _recentWeights = new Queue<double>();
+        private readonly Queue<DateTime> _recentWeightTimes = new Queue<DateTime>();
 
         #endregion
 
@@ -113,10 +119,11 @@ namespace WeightMeasurementApp
         /// <summary>
         /// สร้างอินสแตนซ์ใหม่ของ SmartLogic
         /// </summary>
-        public SmartLogic(ConsoleLogger logger)
+        public SmartLogic(ConsoleLogger logger, ConfigModel config)
         {
             this.logger = logger;
             //lastCheckTime = DateTime.Now;
+            _config = config; // ✨ เก็บ ConfigModel ไว้ใช้งาน
             LogMessage("SmartLogic initialized with improved weight handling");
         }
 
@@ -345,79 +352,182 @@ namespace WeightMeasurementApp
         /// จัดการกับการเปลี่ยนแปลงน้ำหนักแบบก้าวกระโดด
         /// </summary>
         //version 4 10.22 01/05/2025
-        private double ExtractWeightFromPattern(string rawData)
+        private double lastDisplayedWeight = 0;
+        private DateTime lastWeightTime = DateTime.MinValue;
+        //public double ExtractWeightFromPattern(string rawData)
+        //{
+
+        //    if (string.IsNullOrEmpty(rawData))
+        //    {
+        //        logger?.Log("Raw data is null or empty.");
+        //        return 0;
+        //    }
+
+        //    int startPos = _config.WeightStartPosition;
+        //    int endPos = _config.WeightEndPosition;
+        //    int expectedDigits = _config.WeightDigits;
+        //    double maxWeight = _config.WeightMaxValue;
+        //    double minWeight = _config.WeightMinValue;
+
+        //    if (rawData.Length < endPos)
+        //    {
+        //        logger?.Log($"Raw data is too short. Expected at least {endPos} characters.");
+        //        return 0;
+        //    }
+
+        //    string weightStr = rawData.Substring(startPos, endPos - startPos).Trim(); // ✨ ใช้ Trim() เพื่อตัดช่องว่าง
+
+        //    // ✨ ปรับ Regex ให้รองรับตัวเลขน้อยกว่า expectedDigits หลักได้  
+        //    if (!Regex.IsMatch(weightStr, $"^\\d{{1,{expectedDigits}}}(\\.\\d+)?$"))
+        //    {
+        //        logger?.Log($"Extracted weight '{weightStr}' does not match the expected format.");
+        //        return 0;
+        //    }
+
+        //    if (double.TryParse(weightStr, out double weight))
+        //    {
+        //        if (weight > maxWeight)
+        //        {
+        //            logger?.Log($"Extracted weight {weight} exceeds the maximum allowed value of {maxWeight}");
+        //            return 0;
+        //        }
+
+        //        logger?.Log($"Successfully extracted weight: {weight}");
+        //        return weight;
+        //    }
+        //    else
+        //    {
+        //        logger?.Log($"Failed to parse the extracted weight string '{weightStr}' into a number.");
+        //        return 0;
+        //    }
+
+
+
+
+        //}
+
+        public double ExtractWeightFromPattern(string rawData)
         {
-            byte[] bytes = Encoding.ASCII.GetBytes(rawData);
-            int digitStart = -1;
-            int digitCount = 0;
-            bool foundExplicitZero = false;
-
-            for (int i = 0; i < bytes.Length; i++)
+            if (string.IsNullOrEmpty(rawData))
             {
-                if (bytes[i] >= 0x30 && bytes[i] <= 0x39) // ASCII '0'–'9'
-                {
-                    if (digitStart == -1) digitStart = i;
-                    digitCount++;
-                    if (digitCount > 5) break;
-                }
-                else
-                {
-                    if (digitCount == 1 && bytes[digitStart] == 0x30)
-                        foundExplicitZero = true;
-
-                    if (digitCount >= 2)
-                        break;
-
-                    digitStart = -1;
-                    digitCount = 0;
-                }
-            }
-
-            if (digitStart != -1 && digitCount >= 2 && digitCount <= 5)
-            {
-                // ✅ ตรวจสอบย้อนหลังหา '0' ตามด้วย control character ก่อนถึงกลุ่มตัวเลข
-                for (int k = digitStart - 1; k >= 0; k--)
-                {
-                    if (bytes[k] == 0x30) // '0'
-                    {
-                        logger?.Log("⛔ พบ '0' ตามด้วย control char → ถือว่าเป็น noise → return 0");
-                        return 0;
-                    }
-                    else if (bytes[k] >= 0x30 && bytes[k] <= 0x39)
-                    {
-                        break; // พบตัวเลขอื่น → ไม่ใช่ pattern ที่น่าสงสัย
-                    }
-                    else if (bytes[k] >= 0x20)
-                    {
-                        break; // non-control char → ไม่ใช่ noise
-                    }
-                    // หากยังเป็น control char (< 0x20) → loop ต่อ
-                }
-
-                string numberStr = Encoding.ASCII.GetString(bytes, digitStart, digitCount);
-                if (int.TryParse(numberStr, out int result))
-                {
-                    bool hasContext = rawData.Contains("(") || rawData.Contains(":") || rawData.Contains(")") || bytes.Length >= 17;
-                    if (!hasContext && result < 500)
-                    {
-                        logger?.Log($"⛔ ตัวเลข {result} พบในข้อมูลไม่มี context → ตัดทิ้ง");
-                        return 0;
-                    }
-
-                    logger?.Log($"✅ Extracted weight: {result} from ASCII");
-                    return result;
-                }
-            }
-            else if (foundExplicitZero)
-            {
-                logger?.Log("✅ พบค่า '0' เดี่ยวที่เชื่อถือได้ → ถือว่าไม่มีน้ำหนัก");
+                logger?.Log("Raw data is null or empty.");
                 return 0;
             }
 
-            return -1; // ไม่มีข้อมูลที่เชื่อถือได้
+            int startPos = _config.WeightStartPosition;
+            int endPos = _config.WeightEndPosition;
+            int expectedDigits = _config.WeightDigits;
+            double maxWeight = _config.WeightMaxValue;
+            double minWeight = _config.WeightMinValue;
+
+            if (rawData.Length < endPos)
+            {
+                logger?.Log($"Raw data is too short. Expected at least {endPos} characters but got {rawData.Length}. Raw data: '{rawData}'");
+                return 0;
+            }
+
+            try
+            {
+                logger?.Log($"Processing raw data: '{rawData}'");
+                string weightStr = rawData.Substring(startPos, endPos - startPos).Trim();
+                weightStr = Regex.Replace(weightStr, "[^0-9.]", "");
+
+                if (string.IsNullOrEmpty(weightStr))
+                {
+                    logger?.Log("Weight string is empty after cleaning.");
+                    return 0;
+                }
+
+                string pattern = $"^\\d{{1,{_config.WeightDigits}}}(\\.\\d{{0,3}})?$";
+                if (!Regex.IsMatch(weightStr, pattern))
+                {
+                    logger?.Log($"Weight '{weightStr}' does not match expected pattern: {pattern}");
+                    return 0;
+                }
+
+
+                if (double.TryParse(weightStr, out double weight))
+                {
+                    if (weight > maxWeight || (weight < minWeight && weight != 0))
+                    {
+                        logger?.Log($"Weight {weight} out of range.");
+                        return 0;
+                    }
+
+                    // ✨ เพิ่ม logic ตอบสนองไวเมื่อ jump
+                    var now = DateTime.Now;
+                    double jumpThreshold = 100; // หรือกำหนดผ่าน config ก็ได้
+
+                    if (Math.Abs(weight - lastDisplayedWeight) >= jumpThreshold)
+                    {
+                        logger?.Log($"Jump detected → update immediately: {lastDisplayedWeight} → {weight}");
+                        lastDisplayedWeight = weight;
+                        lastWeightTime = now;
+                        return weight;
+                    }
+
+                    // ✨ ใช้ Delay ตามปกติ
+                    if (Math.Abs(weight - lastDisplayedWeight) < 0.01)
+                    {
+                        if ((now - lastWeightTime).TotalMilliseconds >= _config.WeightStableDelay)
+                        {
+                            logger?.Log($"Stable delay passed → update: {weight}");
+                            lastDisplayedWeight = weight;
+                            return weight;
+                        }
+                    }
+                    else
+                    {
+                        lastWeightTime = now; // reset timer
+                    }
+
+                    return lastDisplayedWeight; // ยังไม่ถึง delay, แสดงค่าเดิม
+                }
+                else
+                {
+                    logger?.Log($"Failed to parse: '{weightStr}'");
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.Log($"Exception: {ex.Message}");
+                return 0;
+            }
         }
 
-       
+        public bool IsReadingStable(double newWeight)
+        {
+            bool isStable = false;
+
+            // เก็บค่าน้ำหนักเข้า List สำหรับตรวจสอบความนิ่ง
+            _recentWeights.Enqueue(newWeight);
+            _recentWeightTimes.Enqueue(DateTime.Now);
+
+            // เก็บค่าไว้เฉพาะช่วงเวลาตามที่กำหนด
+            int stableDelay = _config.WeightStableDelay;
+            while (_recentWeightTimes.Count > 0 &&
+                   DateTime.Now - _recentWeightTimes.Peek() > TimeSpan.FromMilliseconds(stableDelay))
+            {
+                _recentWeights.Dequeue();
+                _recentWeightTimes.Dequeue();
+            }
+
+            if (_recentWeights.Count == 0)
+                return false;
+
+            // ✅ ตรวจสอบว่าน้ำหนักนิ่งคงที่ ตามค่า WeightStableDelay ในการตั้งค่า  
+            double minWeight = _recentWeights.Min();
+            double maxWeight = _recentWeights.Max();
+            double weightDiff = maxWeight - minWeight;
+
+            isStable = weightDiff <= 0.01 * minWeight;
+
+            if (isStable)
+                logger?.Log($"Weight is stable at {newWeight}. Min: {minWeight}, Max: {maxWeight}, Diff: {weightDiff}");
+
+            return isStable;
+        }
 
         #endregion
         #region ฟังก์ชันสำหรับการเรียนรู้และการจัดการความเสถียร

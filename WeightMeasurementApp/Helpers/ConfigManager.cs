@@ -25,7 +25,13 @@ namespace WeightMeasurementApp.Helpers
                     Parity = "None",
                     DataBits = 8,
                     StopBits = "One",
-                    Handshake = "None"
+                    Handshake = "None",
+                    WeightStartPosition = 5,
+                    WeightEndPosition = 13,
+                    WeightDigits = 6,
+                    WeightStableDelay = 500, // 1.5 วินาที  
+                    WeightMaxValue = 80000.0,
+                    WeightMinValue = 5.0 // ✨ เพิ่มค่าเริ่มต้น  
                 };
                 SaveConfig(defaultConfig);
                 return defaultConfig;

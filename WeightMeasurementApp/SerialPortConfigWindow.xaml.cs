@@ -97,6 +97,22 @@ namespace WeightMeasurementApp
                 _config.Handshake = (cmbHandshake_config.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "None";
                 _config.AutoConnect = chkAutoConnect_config.IsChecked == true;
 
+                // ✨ บันทึกค่าการตั้งค่ารูปแบบข้อมูลน้ำหนัก
+                if (int.TryParse(txtWeightStartPos.Text, out int startPos))
+                    _config.WeightStartPosition = startPos;
+
+                if (int.TryParse(txtWeightEndPos.Text, out int endPos))
+                    _config.WeightEndPosition = endPos;
+
+                if (int.TryParse(txtWeightDigits.Text, out int digits))
+                    _config.WeightDigits = digits;
+
+                if (int.TryParse(txtWeightStableDelay.Text, out int delay))
+                    _config.WeightStableDelay = delay;
+
+                if (double.TryParse(txtWeightMaxValue.Text, out double maxVal))
+                    _config.WeightMaxValue = maxVal;
+
                 ConfigManager.SaveConfig(_config);
                 MessageBox.Show("บันทึกการตั้งค่าสำเร็จ", "สำเร็จ", MessageBoxButton.OK, MessageBoxImage.Information);
                 this.DialogResult = true;

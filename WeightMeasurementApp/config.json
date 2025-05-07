@@ -4,5 +4,12 @@
     "Parity": "None",
     "DataBits": 8,
     "StopBits": "One",
-    "Handshake": "None"
+    "Handshake": "None",
+    "AutoConnect": false,
+    "WeightStartPosition": 5,
+    "WeightEndPosition": 13,
+    "WeightDigits": 6,
+    "WeightStableDelay": 500,
+    "WeightMaxValue": 80000.0,
+    "WeightMinValue": 5.0
 }

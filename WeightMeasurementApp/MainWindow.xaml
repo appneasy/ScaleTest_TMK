@@ -14,7 +14,7 @@
     <DockPanel LastChildFill="True">
         <!-- เมนูมาตรฐานด้านบน -->
         <Menu DockPanel.Dock="Top" Background="#F0F0F0">
-            <MenuItem Header="ตั้งค่า SerialPort" x:Name="menuSerialPort" Visibility="Collapsed">
+            <MenuItem Header="ตั้งค่า SerialPort" x:Name="menuSerialPort" Visibility="Visible">
                 <MenuItem Header="เลือกพอร์ต" Click="MenuSerialPortSettings_Click" />
             </MenuItem>
             <MenuItem Header="View Log" x:Name="menuViewLog" Click="MenuViewLog_Click"/>
