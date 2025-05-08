@@ -16,7 +16,7 @@ namespace WeightMeasurementApp
 {
     public partial class MainWindow : Window
     {
-        private SerialPort serialPort;
+        private SerialPort serialPort = new SerialPort(); // ✅ Initialize here
         private SmartLogic smartLogic;
         private StringBuilder buffer = new StringBuilder();
         private string? lastRawData = null;  // เก็บข้อมูลดิบล่าสุดเพื่อใช้ในการเรียนรู้
@@ -43,13 +43,14 @@ namespace WeightMeasurementApp
             // กำหนดค่าให้กับฟิลด์ที่เป็น non-nullable ทั้งหมด
             logger = ConsoleLogger.Instance; // ✅ สร้าง shared logger ที่พร้อมใช้งานก่อน
             smartLogic = new SmartLogic(logger,_config!);
+            _config = new ConfigModel();
 
             LoadConfig();
 
-         //   _config = new ConfigModel();
+           
          //   currentConfig = _config;
 
-         //   serialPort = new SerialPort();
+            serialPort = new SerialPort();
             InitializeSerialPort();
             LoadAvailablePorts();
 

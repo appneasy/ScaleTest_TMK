@@ -48,50 +48,50 @@ namespace WeightMeasurementApp
                     cmbComPort_config.Items.Add(port);
                 }
 
-                // สำหรับ Baud Rate
-                int[] baudRates = { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 };
-                foreach (int rate in baudRates)
-                {
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = rate.ToString();
-                    cmbBaudRate_config.Items.Add(item);
-                }
+                //// สำหรับ Baud Rate
+                //int[] baudRates = { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 };
+                //foreach (int rate in baudRates)
+                //{
+                //    ComboBoxItem item = new ComboBoxItem();
+                //    item.Content = rate.ToString();
+                //    cmbBaudRate_config.Items.Add(item);
+                //}
 
-                // สำหรับ Parity
-                string[] parityValues = Enum.GetNames(typeof(Parity));
-                foreach (string parity in parityValues)
-                {
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = parity;
-                    cmbParity_config.Items.Add(item);
-                }
+                //// สำหรับ Parity
+                //string[] parityValues = Enum.GetNames(typeof(Parity));
+                //foreach (string parity in parityValues)
+                //{
+                //    ComboBoxItem item = new ComboBoxItem();
+                //    item.Content = parity;
+                //    cmbParity_config.Items.Add(item);
+                //}
 
-                // สำหรับ Data Bits
-                int[] dataBits = { 5, 6, 7, 8 };
-                foreach (int bits in dataBits)
-                {
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = bits.ToString();
-                    cmbDataBits_config.Items.Add(item);
-                }
+                //// สำหรับ Data Bits
+                //int[] dataBits = { 5, 6, 7, 8 };
+                //foreach (int bits in dataBits)
+                //{
+                //    ComboBoxItem item = new ComboBoxItem();
+                //    item.Content = bits.ToString();
+                //    cmbDataBits_config.Items.Add(item);
+                //}
 
-                // สำหรับ Stop Bits
-                string[] stopBits = Enum.GetNames(typeof(StopBits));
-                foreach (string bits in stopBits)
-                {
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = bits;
-                    cmbStopBits_config.Items.Add(item);
-                }
+                //// สำหรับ Stop Bits
+                //string[] stopBits = Enum.GetNames(typeof(StopBits));
+                //foreach (string bits in stopBits)
+                //{
+                //    ComboBoxItem item = new ComboBoxItem();
+                //    item.Content = bits;
+                //    cmbStopBits_config.Items.Add(item);
+                //}
 
-                // สำหรับ Handshake
-                string[] handshakes = Enum.GetNames(typeof(Handshake));
-                foreach (string handshake in handshakes)
-                {
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = handshake;
-                    cmbHandshake_config.Items.Add(item);
-                }
+                //// สำหรับ Handshake
+                //string[] handshakes = Enum.GetNames(typeof(Handshake));
+                //foreach (string handshake in handshakes)
+                //{
+                //    ComboBoxItem item = new ComboBoxItem();
+                //    item.Content = handshake;
+                //    cmbHandshake_config.Items.Add(item);
+                //}
             }
             catch (Exception ex)
             {
@@ -153,8 +153,8 @@ namespace WeightMeasurementApp
                 string baudRateStr = config.BaudRate.ToString();
                 for (int i = 0; i < cmbBaudRate_config.Items.Count; i++)
                 {
-                    ComboBoxItem item = cmbBaudRate_config.Items[i] as ComboBoxItem;
-                    if (item?.Content?.ToString() == baudRateStr)
+                    if (cmbBaudRate_config.Items[i] is ComboBoxItem item &&
+                        item.Content?.ToString() == baudRateStr)
                     {
                         cmbBaudRate_config.SelectedIndex = i;
                         break;
@@ -162,48 +162,59 @@ namespace WeightMeasurementApp
                 }
 
                 // กำหนดค่า Parity
+                string parityStr = config.Parity.ToString();
                 for (int i = 0; i < cmbParity_config.Items.Count; i++)
                 {
-                    ComboBoxItem item = cmbParity_config.Items[i] as ComboBoxItem;
-                    if (item?.Content?.ToString() == config.Parity)
+
+                    if (cmbParity_config.Items[i] is ComboBoxItem item &&
+                        item.Content?.ToString() == parityStr)
                     {
                         cmbParity_config.SelectedIndex = i;
                         break;
                     }
+
                 }
 
                 // กำหนดค่า DataBits
+             
                 string dataBitsStr = config.DataBits.ToString();
                 for (int i = 0; i < cmbDataBits_config.Items.Count; i++)
                 {
-                    ComboBoxItem item = cmbDataBits_config.Items[i] as ComboBoxItem;
-                    if (item?.Content?.ToString() == dataBitsStr)
+                    if (cmbDataBits_config.Items[i] is ComboBoxItem item &&
+                        item.Content?.ToString() == dataBitsStr)
                     {
                         cmbDataBits_config.SelectedIndex = i;
                         break;
                     }
+
                 }
 
                 // กำหนดค่า StopBits
+                string stopbitStr = config.StopBits.ToString();
                 for (int i = 0; i < cmbStopBits_config.Items.Count; i++)
                 {
-                    ComboBoxItem item = cmbStopBits_config.Items[i] as ComboBoxItem;
-                    if (item?.Content?.ToString() == config.StopBits)
+
+                    if (cmbStopBits_config.Items[i] is ComboBoxItem item &&
+                 item.Content?.ToString() == stopbitStr)
                     {
                         cmbStopBits_config.SelectedIndex = i;
                         break;
                     }
+
                 }
 
                 // กำหนดค่า Handshake
+                string handshakeStr = config.Handshake.ToString();
                 for (int i = 0; i < cmbHandshake_config.Items.Count; i++)
                 {
-                    ComboBoxItem item = cmbHandshake_config.Items[i] as ComboBoxItem;
-                    if (item?.Content?.ToString() == config.Handshake)
+
+                    if (cmbHandshake_config.Items[i] is ComboBoxItem item &&
+                       item.Content?.ToString() == handshakeStr)
                     {
                         cmbHandshake_config.SelectedIndex = i;
                         break;
                     }
+     
                 }
 
                 // กำหนดค่า AutoConnect
