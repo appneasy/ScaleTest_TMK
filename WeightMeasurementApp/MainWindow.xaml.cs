@@ -34,7 +34,7 @@ namespace WeightMeasurementApp
        // private ConfigModel currentConfig; // <<== เพิ่มบรรทัดนี้
         private ConfigModel _config;
         private bool isConnected = false;
-
+      
         public MainWindow()
         {
             InitializeComponent();
@@ -68,6 +68,7 @@ namespace WeightMeasurementApp
 
             ApplyConfigToUI();
 
+            smartLogic.SuggestedWeightRangeUpdated += UpdateStartEndSuggested; //สำหรับ แสดงค่า อักขระแนะนำ
             // อัพเดทสถานะปุ่มเริ่มต้น
 
             LogToConsole("โปรแกรมเริ่มทำงานแล้ว");
@@ -83,6 +84,20 @@ namespace WeightMeasurementApp
             }
         }
 
+        private void UpdateStartEndSuggested(int startPos, int endPos)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (startPos >= 0 && endPos >= 0)
+                {
+                    txtStartEndSuggested.Text = $"StartPos: {startPos}, EndPos: {endPos}";
+                }
+                else
+                {
+                    txtStartEndSuggested.Text = "ไม่พบตำแหน่งตัวเลขที่ตรงตามเงื่อนไข";
+                }
+            });
+        }
         private void ShowCurrentConfigInTextBox()
         {
             if (_config == null) return;
@@ -113,6 +128,7 @@ namespace WeightMeasurementApp
                 txtConsoleLog.AppendText("=== Console Log ===" + Environment.NewLine);
 
                 LogToConsole("เตรียม log displays เรียบร้อย");
+                
             }
             catch (Exception ex)
             {
@@ -501,6 +517,7 @@ namespace WeightMeasurementApp
                     isConnected = true;
                     UpdateStatus("เชื่อมต่อกับเครื่องชั่งสำเร็จ", Colors.Green);
                     LogToConsole("เชื่อมต่อกับเครื่องชั่งสำเร็จ");
+                   
                 }
                 else
                 {
@@ -780,6 +797,7 @@ namespace WeightMeasurementApp
                 {
                     SetStableState(true);
                     logger?.Log("เปลี่ยนสถานะเป็นนิ่ง");
+                    smartLogic.LogSuggestedWeightRange(lastRawData); //08052025
                 }
             }
           //  lastWeightDisplayed = weight;

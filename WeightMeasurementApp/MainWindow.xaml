@@ -68,36 +68,28 @@
                          Visibility="Collapsed"/>
 
                 <!-- ส่วนของการตั้งค่า -->
-                <GroupBox Grid.Row="1" 
-                          Header="การตั้งค่าพอร์ตอนุกรม" 
-                          Margin="20,10,20,30" 
-                          Padding="10">
+                <GroupBox Grid.Row="1" Header="การตั้งค่าพอร์ตอนุกรม" Margin="20,10,20,30" Padding="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="Auto" x:Name="RowCOMPort"/>
+                            <RowDefinition Height="Auto" x:Name="RowBaudRate"/>
+                            <RowDefinition Height="Auto" x:Name="RowParity"/>
+                            <RowDefinition Height="Auto" x:Name="RowDataBits"/>
+                            <RowDefinition Height="Auto" x:Name="RowStopBits"/>
+                            <RowDefinition Height="Auto" x:Name="RowHandshake"/>
+                            <RowDefinition Height="Auto" x:Name="RowConfigInfo"/>
+                            <RowDefinition Height="Auto" x:Name="RowStartEndSuggested"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Labels -->
+                        <!-- Labels and Input Controls -->
                         <Label Grid.Row="0" Grid.Column="0" Content="COM Port:" Margin="5"/>
-                        <Label Grid.Row="1" Grid.Column="0" Content="Baud Rate:" Margin="5"/>
-                        <Label Grid.Row="2" Grid.Column="0" Content="Parity:" Margin="5"/>
-                        <Label Grid.Row="3" Grid.Column="0" Content="Data Bits:" Margin="5"/>
-                        <Label Grid.Row="4" Grid.Column="0" Content="Stop Bits:" Margin="5"/>
-                        <Label Grid.Row="5" Grid.Column="0" Content="Handshake:" Margin="5"/>
-                        <Label Grid.Row="6" Grid.Column="0" Content="Config Info:" Margin="5"/>
-
-                        <!-- ComboBoxes -->
                         <ComboBox x:Name="cmbComPort" Grid.Row="0" Grid.Column="1" Margin="5"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Baud Rate:" Margin="5"/>
                         <ComboBox x:Name="cmbBaudRate" Grid.Row="1" Grid.Column="1" Margin="5">
                             <ComboBoxItem Content="1200" IsSelected="True"/>
                             <ComboBoxItem Content="2400"/>
@@ -106,30 +98,40 @@
                             <ComboBoxItem Content="19200"/>
                             <ComboBoxItem Content="115200"/>
                         </ComboBox>
+
+                        <Label Grid.Row="2" Grid.Column="0" Content="Parity:" Margin="5"/>
                         <ComboBox x:Name="cmbParity" Grid.Row="2" Grid.Column="1" Margin="5">
                             <ComboBoxItem Content="None" IsSelected="True"/>
                             <ComboBoxItem Content="Odd"/>
                             <ComboBoxItem Content="Even"/>
                         </ComboBox>
+
+                        <Label Grid.Row="3" Grid.Column="0" Content="Data Bits:" Margin="5"/>
                         <ComboBox x:Name="cmbDataBits" Grid.Row="3" Grid.Column="1" Margin="5">
                             <ComboBoxItem Content="8"/>
                             <ComboBoxItem Content="7" IsSelected="True"/>
                         </ComboBox>
+
+                        <Label Grid.Row="4" Grid.Column="0" Content="Stop Bits:" Margin="5"/>
                         <ComboBox x:Name="cmbStopBits" Grid.Row="4" Grid.Column="1" Margin="5">
                             <ComboBoxItem Content="One" IsSelected="True"/>
                             <ComboBoxItem Content="Two"/>
                         </ComboBox>
+
+                        <Label Grid.Row="5" Grid.Column="0" Content="Handshake:" Margin="5"/>
                         <ComboBox x:Name="cmbHandshake" Grid.Row="5" Grid.Column="1" Margin="5">
                             <ComboBoxItem Content="None" IsSelected="True"/>
                             <ComboBoxItem Content="XOnXOff"/>
                             <ComboBoxItem Content="RequestToSend"/>
                         </ComboBox>
-                        <TextBox Grid.Row="6" Grid.Column="1"
-x:Name="txtCurrentConfigInfo"
-Margin="5,5,5,-116"
-IsReadOnly="True"
-TextWrapping="Wrap"
-VerticalScrollBarVisibility="Auto"/>
+
+                        <Label Grid.Row="6" Grid.Column="0" Content="Config Info:" Margin="5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" x:Name="txtCurrentConfigInfo" Margin="5" IsReadOnly="True"
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MinHeight="90"/>
+
+                        <Label Grid.Row="7" Grid.Column="0" Content="ค่า St-EN POS:" Margin="5"/>
+                        <TextBox Grid.Row="7" Grid.Column="1" x:Name="txtStartEndSuggested" Margin="5" IsReadOnly="True"
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MinHeight="30"/>
                     </Grid>
                 </GroupBox>
 

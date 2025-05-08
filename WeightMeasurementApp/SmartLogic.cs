@@ -884,14 +884,20 @@ namespace WeightMeasurementApp
         //}
 
         //version 5-6-7 ปรับปรับ หาน้ำหนักจาก 0 ตรงกลาง padding left และ มีน้ำหนักจริงได้
+
+
         /// <summary>
         /// แนะนำตำแหน่ง startpos และ endpos ที่เหมาะสมที่สุดจาก raw data
         /// </summary>
-        private void LogSuggestedWeightRange(string rawData)
+        /// 
+        public event Action<int, int>? SuggestedWeightRangeUpdated;
+
+        public void LogSuggestedWeightRange(string rawData)
         {
             if (string.IsNullOrEmpty(rawData))
             {
                 logger?.Log("Cannot suggest weight range: raw data is null or empty.");
+                SuggestedWeightRangeUpdated?.Invoke(-1, -1); // ส่งค่า -1 เมื่อไม่มีข้อมูล
                 return;
             }
 
@@ -941,10 +947,13 @@ namespace WeightMeasurementApp
             {
                 string rawDigits = rawData.Substring(best.start, best.end - best.start);
                 logger?.Log($"→ Start: {best.start}, End: {best.end}, Value: '{best.value}' (padded {best.padLeft} left)");
+                SuggestedWeightRangeUpdated?.Invoke(best.start, best.end); // 🔹 ส่งค่าไปยัง MainWindow
+
             }
             else
             {
                 logger?.Log("ไม่พบตำแหน่งตัวเลขที่ตรงตามเงื่อนไขสำหรับการแนะนำตำแหน่ง.");
+                SuggestedWeightRangeUpdated?.Invoke(-1, -1); // 🔹 ส่งค่า -1 เมื่อไม่พบตำแหน่งที่เหมาะสม
             }
         }
 
