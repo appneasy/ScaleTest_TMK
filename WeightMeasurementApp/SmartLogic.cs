@@ -661,6 +661,7 @@ namespace WeightMeasurementApp
         /// <summary>
         /// แยกน้ำหนักจากรูปแบบข้อมูลดิบ (เวอร์ชัน 4 ปรับปรุงแล้ว)
         /// </summary>
+        // ปรับปรุง ExtractWeightFromPattern - ทำให้เรียบง่ายขึ้น เน้นแยกน้ำหนักเท่านั้น
         public double ExtractWeightFromPattern(string rawData)
         {
             if (string.IsNullOrEmpty(rawData))
@@ -771,33 +772,8 @@ namespace WeightMeasurementApp
                             return 0;
                         }
 
-                        // จัดการการเปลี่ยนแปลงน้ำหนักและความเสถียร
-                        var now = DateTime.Now;
-                        double jumpThreshold = 100;
-
-                        if (Math.Abs(weight - lastDisplayedWeight) >= jumpThreshold)
-                        {
-                            logger?.Log($"Jump detected → update immediately: {lastDisplayedWeight} → {weight}");
-                            lastDisplayedWeight = weight;
-                            lastWeightTime = now;
-                            return weight;
-                        }
-
-                        if (Math.Abs(weight - lastDisplayedWeight) < 0.01)
-                        {
-                            if ((now - lastWeightTime).TotalMilliseconds >= _config.WeightStableDelay)
-                            {
-                                logger?.Log($"Stable delay passed → update: {weight}");
-                                lastDisplayedWeight = weight;
-                                return weight;
-                            }
-                        }
-                        else
-                        {
-                            lastWeightTime = now;
-                        }
-
-                        return lastDisplayedWeight;
+                        // ปรับปรุง: ส่งค่าน้ำหนักที่แท้จริงกลับโดยไม่มีการกรอง
+                        return weight;
                     }
                     else
                     {
@@ -1126,11 +1102,10 @@ namespace WeightMeasurementApp
         //}
 
 
+        // ปรับปรุง IsReadingStable - ปรับให้เรียบง่ายและยืดหยุ่นขึ้น
         public bool IsReadingStable(double newWeight)
         {
-            bool isStable = false;
-
-            // เก็บค่าน้ำหนักเข้า List สำหรับตรวจสอบความนิ่ง
+            // เก็บค่าน้ำหนักเข้า Queue สำหรับตรวจสอบความนิ่ง
             _recentWeights.Enqueue(newWeight);
             _recentWeightTimes.Enqueue(DateTime.Now);
 
@@ -1143,18 +1118,30 @@ namespace WeightMeasurementApp
                 _recentWeightTimes.Dequeue();
             }
 
-            if (_recentWeights.Count == 0)
+            if (_recentWeights.Count < 2)
                 return false;
 
-            // ✅ ตรวจสอบว่าน้ำหนักนิ่งคงที่ ตามค่า WeightStableDelay ในการตั้งค่า  
+            // ปรับปรุง: ใช้เกณฑ์แบบเปอร์เซ็นต์ที่แตกต่างกันตามขนาดของน้ำหนัก
             double minWeight = _recentWeights.Min();
             double maxWeight = _recentWeights.Max();
             double weightDiff = maxWeight - minWeight;
 
-            isStable = weightDiff <= 0.01 * minWeight;
+            // ค่าคงที่ตายตัวภายในฟังก์ชัน (ไม่ต้องเพิ่มการตั้งค่า)
+            double stabilityThreshold;
+
+            if (minWeight < 100)
+                stabilityThreshold = 1.0; // น้ำหนักน้อย ยอมให้ต่างได้ไม่เกิน 1 หน่วย
+            else if (minWeight < 1000)
+                stabilityThreshold = minWeight * 0.005; // 0.5% สำหรับน้ำหนักปานกลาง
+            else if (minWeight < 10000)
+                stabilityThreshold = minWeight * 0.003; // 0.3% สำหรับน้ำหนักมาก
+            else
+                stabilityThreshold = minWeight * 0.002; // 0.2% สำหรับน้ำหนักมากมาก (รถบรรทุก)
+
+            bool isStable = weightDiff <= stabilityThreshold;
 
             if (isStable)
-                logger?.Log($"Weight is stable at {newWeight}. Min: {minWeight}, Max: {maxWeight}, Diff: {weightDiff}");
+                logger?.Log($"Weight is stable at {newWeight}. Min: {minWeight}, Max: {maxWeight}, Diff: {weightDiff}, Threshold: {stabilityThreshold}");
 
             return isStable;
         }
