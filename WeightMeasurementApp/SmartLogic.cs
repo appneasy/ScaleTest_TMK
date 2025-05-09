@@ -129,23 +129,23 @@ namespace WeightMeasurementApp
 
        
 
-        public double ProcessRawData(string rawData)
-        {
-            if (string.IsNullOrWhiteSpace(rawData)) return 0;
+        //public double ProcessRawData(string rawData)
+        //{
+        //    if (string.IsNullOrWhiteSpace(rawData)) return 0;
 
-            lastRawData = rawData;
-            LogMessage($"Raw Data for Processing: \"{rawData}\" (Length: {rawData.Length})");
+        //    lastRawData = rawData;
+        //    LogMessage($"Raw Data for Processing: \"{rawData}\" (Length: {rawData.Length})");
 
-            double extractedWeight = ExtractWeightFromPattern(rawData);
-            if (extractedWeight == -1)
-            {
-                LogMessage("❌ ไม่พบค่าน้ำหนักที่เชื่อถือได้จาก ASCII pattern");
-                return previousWeight > 0 ? previousWeight : 0;
-            }
+        //    double extractedWeight = ExtractWeightFromPattern(rawData);
+        //    if (extractedWeight == -1)
+        //    {
+        //        LogMessage("❌ ไม่พบค่าน้ำหนักที่เชื่อถือได้จาก ASCII pattern");
+        //        return previousWeight > 0 ? previousWeight : 0;
+        //    }
 
-            previousWeight = extractedWeight;
-            return extractedWeight;
-        }
+        //    previousWeight = extractedWeight;
+        //    return extractedWeight;
+        //}
 
 
         /// <summary>
@@ -653,6 +653,14 @@ namespace WeightMeasurementApp
         //    }
         //}
         //version 4 ใช้สำหรับ logsugget version 5
+        /// <summary>
+        /// แนะนำตำแหน่ง startpos และ endpos ที่เหมาะสมที่สุดจาก raw data
+        /// เน้นการค้นหา startpos ก่อน แล้วจึงขยายไปหา endpos
+        /// </summary>
+        /// 
+        /// <summary>
+        /// แยกน้ำหนักจากรูปแบบข้อมูลดิบ (เวอร์ชัน 4 ปรับปรุงแล้ว)
+        /// </summary>
         public double ExtractWeightFromPattern(string rawData)
         {
             if (string.IsNullOrEmpty(rawData))
@@ -661,97 +669,257 @@ namespace WeightMeasurementApp
                 return 0;
             }
 
-            int startPos = _config.WeightStartPosition;
-            int endPos = _config.WeightEndPosition;
-            int expectedDigits = _config.WeightDigits;
-            double maxWeight = _config.WeightMaxValue;
-            double minWeight = _config.WeightMinValue;
-
-            // ✅ เรียกฟังก์ชันแนะนำตำแหน่งตัวเลข (ยังคงเดิม)
-            LogSuggestedWeightRange(rawData);
-
-            // ✅ เพิ่ม fallback หากความยาว rawData น้อยกว่าค่าตำแหน่งเดิม
-            if (rawData.Length < endPos || endPos <= startPos)
-            {
-                logger?.Log($"Raw data is too short for configured start/end. Raw: '{rawData}' (Len={rawData.Length}), Start: {startPos}, End: {endPos}");
-                return 0;
-            }
-
             try
             {
+                // 1. ตัวแปรที่จำเป็น
+                int startPos = _config.WeightStartPosition;
+                int endPos = _config.WeightEndPosition;
+                double maxWeight = _config.WeightMaxValue;
+                double minWeight = _config.WeightMinValue;
+
                 logger?.Log($"Processing raw data: '{rawData}'");
 
-                // ✅ ดึง substring ตามตำแหน่งที่ตั้งค่าไว้
-                string weightStr = rawData.Substring(startPos, endPos - startPos).Trim();
+                // 2. เก็บตำแหน่งที่แนะนำจาก LogSuggestedWeightRange
+                int suggestedStart = -1;
+                int suggestedEnd = -1;
 
-                logger?.Log($"Weight string candidate before clean: '{weightStr}'");
+                // เพิ่ม event handler ชั่วคราว
+                Action<int, int> tempHandler = (start, end) => {
+                    suggestedStart = start;
+                    suggestedEnd = end;
+                };
 
-                // ✅ ทำความสะอาดให้เหลือแต่ตัวเลขและจุดทศนิยม
-                weightStr = Regex.Replace(weightStr, "[^0-9.]", "");
+                // เรียกใช้ LogSuggestedWeightRange
+                SuggestedWeightRangeUpdated += tempHandler;
+                LogSuggestedWeightRange(rawData);
+                SuggestedWeightRangeUpdated -= tempHandler;
 
-                if (string.IsNullOrEmpty(weightStr))
+                // 3. ใช้ตำแหน่งที่แนะนำหากมี (และถูกต้อง)
+                if (suggestedStart >= 0 && suggestedEnd > suggestedStart && suggestedEnd <= rawData.Length)
                 {
-                    logger?.Log("Weight string is empty after cleaning.");
-                    return 0;
-                }
-
-                // ✅ อัปเดต pattern สำหรับตรวจสอบความถูกต้องของรูปแบบน้ำหนัก
-                string pattern = $"^\\d{{1,{expectedDigits}}}(\\.\\d{{0,3}})?$";
-                logger?.Log($"Checking regex match: '{weightStr}' vs pattern: {pattern}");
-
-                if (!Regex.IsMatch(weightStr, pattern))
-                {
-                    logger?.Log($"Weight '{weightStr}' does not match expected pattern: {pattern}");
-                    return 0;
-                }
-
-                // ✅ พยายามแปลงเป็นตัวเลข
-                if (double.TryParse(weightStr, out double weight))
-                {
-                    if (weight > maxWeight || (weight < minWeight && weight != 0))
-                    {
-                        logger?.Log($"Weight {weight} out of range.");
-                        return 0;
-                    }
-
-                    var now = DateTime.Now;
-                    double jumpThreshold = 100;
-
-                    if (Math.Abs(weight - lastDisplayedWeight) >= jumpThreshold)
-                    {
-                        logger?.Log($"Jump detected → update immediately: {lastDisplayedWeight} → {weight}");
-                        lastDisplayedWeight = weight;
-                        lastWeightTime = now;
-                        return weight;
-                    }
-
-                    if (Math.Abs(weight - lastDisplayedWeight) < 0.01)
-                    {
-                        if ((now - lastWeightTime).TotalMilliseconds >= _config.WeightStableDelay)
-                        {
-                            logger?.Log($"Stable delay passed → update: {weight}");
-                            lastDisplayedWeight = weight;
-                            return weight;
-                        }
-                    }
-                    else
-                    {
-                        lastWeightTime = now;
-                    }
-
-                    return lastDisplayedWeight;
+                    startPos = suggestedStart;
+                    endPos = suggestedEnd;
+                    logger?.Log($"Using suggested positions - Start: {startPos}, End: {endPos}");
                 }
                 else
                 {
-                    logger?.Log($"Failed to parse: '{weightStr}'");
+                    logger?.Log($"Using configured positions - Start: {startPos}, End: {endPos}");
+
+                    // ตรวจสอบว่าตำแหน่งที่กำหนดถูกต้อง
+                    if (startPos < 0 || endPos > rawData.Length || endPos <= startPos)
+                    {
+                        logger?.Log($"Invalid position settings: Start={startPos}, End={endPos}, Length={rawData.Length}");
+                        if (suggestedStart >= 0)
+                        {
+                            startPos = suggestedStart;
+                            endPos = suggestedEnd;
+                            logger?.Log($"Using fallback suggested positions: Start={startPos}, End={endPos}");
+                        }
+                        else
+                        {
+                            // หากตำแหน่งไม่ถูกต้องและไม่มีตำแหน่งที่แนะนำ ให้ใช้ค่าปลอดภัย
+                            startPos = 0;
+                            endPos = Math.Min(rawData.Length, 5);
+                            logger?.Log($"Using safe default positions: Start={startPos}, End={endPos}");
+                        }
+                    }
+                }
+
+                // 4. ดึงข้อมูลตามตำแหน่งและทำความสะอาด
+                string weightStr;
+                try
+                {
+                    string extractedStr = rawData.Substring(startPos, endPos - startPos).Trim();
+                    logger?.Log($"Extracted substring: '{extractedStr}'");
+
+                    // ทำความสะอาดให้เหลือแต่ตัวเลขและจุดทศนิยม
+                    weightStr = System.Text.RegularExpressions.Regex.Replace(extractedStr, "[^0-9.-]", "");
+
+                    if (string.IsNullOrEmpty(weightStr))
+                    {
+                        logger?.Log("Weight string is empty after cleaning.");
+                        return 0;
+                    }
+
+                    // จัดการกับเครื่องหมายลบ
+                    bool isNegative = weightStr.Contains("-");
+                    weightStr = weightStr.Replace("-", "");
+
+                    // จัดการกับจุดทศนิยมซ้ำซ้อน
+                    int decimalCount = weightStr.Count(c => c == '.');
+                    if (decimalCount > 1)
+                    {
+                        int firstDecimal = weightStr.IndexOf('.');
+                        weightStr = weightStr.Substring(0, firstDecimal + 1) +
+                                   weightStr.Substring(firstDecimal + 1).Replace(".", "");
+                        logger?.Log($"Fixed multiple decimals: '{weightStr}'");
+                    }
+
+                    // แปลงเป็นตัวเลข
+                    if (double.TryParse(weightStr, out double weight))
+                    {
+                        // ปรับให้เป็นค่าลบถ้าจำเป็น
+                        if (isNegative)
+                        {
+                            weight = -weight;
+                        }
+
+                        // ตรวจสอบช่วงที่ถูกต้อง
+                        if (weight > maxWeight || (weight < minWeight && weight != 0))
+                        {
+                            logger?.Log($"Weight {weight} out of range. Min: {minWeight}, Max: {maxWeight}");
+                            return 0;
+                        }
+
+                        // จัดการการเปลี่ยนแปลงน้ำหนักและความเสถียร
+                        var now = DateTime.Now;
+                        double jumpThreshold = 100;
+
+                        if (Math.Abs(weight - lastDisplayedWeight) >= jumpThreshold)
+                        {
+                            logger?.Log($"Jump detected → update immediately: {lastDisplayedWeight} → {weight}");
+                            lastDisplayedWeight = weight;
+                            lastWeightTime = now;
+                            return weight;
+                        }
+
+                        if (Math.Abs(weight - lastDisplayedWeight) < 0.01)
+                        {
+                            if ((now - lastWeightTime).TotalMilliseconds >= _config.WeightStableDelay)
+                            {
+                                logger?.Log($"Stable delay passed → update: {weight}");
+                                lastDisplayedWeight = weight;
+                                return weight;
+                            }
+                        }
+                        else
+                        {
+                            lastWeightTime = now;
+                        }
+
+                        return lastDisplayedWeight;
+                    }
+                    else
+                    {
+                        logger?.Log($"Failed to parse: '{weightStr}'");
+                        return 0;
+                    }
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    logger?.Log($"Substring error: Start={startPos}, End={endPos}, Length={rawData.Length}");
                     return 0;
                 }
             }
             catch (Exception ex)
             {
-                logger?.Log($"Exception: {ex.Message}");
+                logger?.Log($"Exception in ExtractWeightFromPattern: {ex.Message}");
                 return 0;
             }
+        }
+        /// <summary>
+        /// แนะนำตำแหน่ง startpos และ endpos ที่เหมาะสมที่สุดจาก raw data
+        /// เน้นการค้นหา startpos ก่อน แล้วจึงขยายไปหา endpos
+        /// </summary>
+        public void LogSuggestedWeightRange(string rawData)
+        {
+            if (string.IsNullOrEmpty(rawData))
+            {
+                logger?.Log("Cannot suggest weight range: raw data is null or empty.");
+                SuggestedWeightRangeUpdated?.Invoke(-1, -1); // ส่งค่า -1 เมื่อไม่มีข้อมูล
+                return;
+            }
+
+            logger?.Log($"ข้อมูลที่ได้รับ: \"{rawData}\" (ความยาว: {rawData.Length})");
+
+            int expectedDigits = _config.WeightDigits;
+
+            // 1. First priority: ตรวจสอบรูปแบบ "(0 xxxxx 0" ตามที่กำหนดเป็นพิเศษ
+            if (rawData.Contains("(0"))
+            {
+                int openParenPos = rawData.IndexOf("(0");
+                if (openParenPos >= 0)
+                {
+                    // กำหนด startpos = 5 ตามที่ระบุ (หรือปรับตามตำแหน่งจริงถ้าต้องการ)
+                    int startPos = _config.WeightStartPosition;
+                    //  int endPos = 10; // กำหนด endpos = 10 ตามที่ระบุ
+                   // int endPos = _config.WeightEndPosition;     // ใช้ค่าจาก config
+                    int endPos = Math.Max(_config.WeightEndPosition, startPos + _config.WeightDigits);
+                    // ตรวจสอบความเป็นไปได้ของตำแหน่ง
+                    if (rawData.Length >= endPos)
+                    {
+                        string valueStr = rawData.Substring(startPos, endPos - startPos).Trim();
+                        logger?.Log($"→ พบรูปแบบพิเศษ: Start: {startPos}, End: {endPos}, Value: '{valueStr}'");
+
+                        SuggestedWeightRangeUpdated?.Invoke(startPos, endPos);
+                        return;
+                    }
+                }
+            }
+
+            // 2. ค้นหากลุ่มตัวเลขทั้งหมดในข้อมูล
+            var digitGroups = new List<(int start, int end, string value, bool hasMultipleDigits)>();
+
+            for (int i = 0; i < rawData.Length; i++)
+            {
+                if (char.IsDigit(rawData[i]))
+                {
+                    int start = i;
+                    int end = i + 1;
+
+                    // ค้นหาตัวเลขต่อเนื่อง
+                    while (end < rawData.Length && char.IsDigit(rawData[end]))
+                    {
+                        end++;
+                    }
+
+                    string value = rawData.Substring(start, end - start);
+                    bool hasMultipleDigits = value.Length > 1 && value != "0";
+
+                    // เพิ่มกลุ่มที่พบเข้าไปในรายการ
+                    digitGroups.Add((start, end, value, hasMultipleDigits));
+
+                    // ข้ามไปที่ตำแหน่งถัดจากกลุ่มที่พบ
+                    i = end - 1;
+                }
+            }
+
+            // 3. ให้ความสำคัญกับกลุ่มที่มีหลายหลัก และไม่ใช่ 0
+            var significantGroups = digitGroups.Where(g => g.hasMultipleDigits).ToList();
+
+            if (significantGroups.Count > 0)
+            {
+                // เลือกกลุ่มที่มีความสำคัญตามลำดับ
+                var bestGroup = significantGroups.First();
+
+                // คำนวณ endPos ที่เหมาะสม โดยให้มีความยาวอย่างน้อย expectedDigits
+                int adjustedEndPos = Math.Max(bestGroup.end, bestGroup.start + expectedDigits);
+
+                // ตรวจสอบว่า endPos ไม่เกินความยาวของข้อมูล
+                adjustedEndPos = Math.Min(adjustedEndPos, rawData.Length);
+
+                logger?.Log($"→ Start: {bestGroup.start}, End: {adjustedEndPos}, Value: '{bestGroup.value}'");
+                SuggestedWeightRangeUpdated?.Invoke(bestGroup.start, adjustedEndPos);
+                return;
+            }
+
+            // 4. ถ้าไม่พบกลุ่มที่มีความสำคัญ แต่มีกลุ่มตัวเลขอื่น
+            if (digitGroups.Count > 0)
+            {
+                var firstGroup = digitGroups.First();
+
+                // คำนวณ endPos ที่เหมาะสม
+                int adjustedEndPos = Math.Max(firstGroup.end, firstGroup.start + expectedDigits);
+                adjustedEndPos = Math.Min(adjustedEndPos, rawData.Length);
+
+                logger?.Log($"→ Start: {firstGroup.start}, End: {adjustedEndPos}, Value: '{firstGroup.value}'");
+                SuggestedWeightRangeUpdated?.Invoke(firstGroup.start, adjustedEndPos);
+                return;
+            }
+
+            // 5. ไม่พบกลุ่มตัวเลขใดๆ
+            logger?.Log("ไม่พบตำแหน่งตัวเลขที่ตรงตามเงื่อนไขสำหรับการแนะนำตำแหน่ง.");
+            SuggestedWeightRangeUpdated?.Invoke(-1, -1);
         }
 
 
@@ -892,70 +1060,70 @@ namespace WeightMeasurementApp
         /// 
         public event Action<int, int>? SuggestedWeightRangeUpdated;
 
-        public void LogSuggestedWeightRange(string rawData)
-        {
-            if (string.IsNullOrEmpty(rawData))
-            {
-                logger?.Log("Cannot suggest weight range: raw data is null or empty.");
-                SuggestedWeightRangeUpdated?.Invoke(-1, -1); // ส่งค่า -1 เมื่อไม่มีข้อมูล
-                return;
-            }
+        //public void LogSuggestedWeightRange(string rawData)
+        //{
+        //    if (string.IsNullOrEmpty(rawData))
+        //    {
+        //        logger?.Log("Cannot suggest weight range: raw data is null or empty.");
+        //        SuggestedWeightRangeUpdated?.Invoke(-1, -1); // ส่งค่า -1 เมื่อไม่มีข้อมูล
+        //        return;
+        //    }
 
-            int expectedDigits = _config.WeightDigits;
-            var digits = new List<(int start, int end, string value, int padLeft)>(); // 🆕 เก็บตำแหน่ง + padding
+        //    int expectedDigits = _config.WeightDigits;
+        //    var digits = new List<(int start, int end, string value, int padLeft)>(); // 🆕 เก็บตำแหน่ง + padding
 
-            int center = rawData.Length / 2;
+        //    int center = rawData.Length / 2;
 
-            for (int i = 0; i < rawData.Length; i++)
-            {
-                if (char.IsDigit(rawData[i]))
-                {
-                    int start = i;
-                    int end = i + 1;
+        //    for (int i = 0; i < rawData.Length; i++)
+        //    {
+        //        if (char.IsDigit(rawData[i]))
+        //        {
+        //            int start = i;
+        //            int end = i + 1;
 
-                    while (end < rawData.Length && char.IsDigit(rawData[end]))
-                    {
-                        end++;
-                    }
+        //            while (end < rawData.Length && char.IsDigit(rawData[end]))
+        //            {
+        //                end++;
+        //            }
 
-                    string value = rawData.Substring(start, end - start);
+        //            string value = rawData.Substring(start, end - start);
 
-                    if (value.Length <= expectedDigits)
-                    {
-                        int padLeft = expectedDigits - value.Length;
-                        int newStart = start - padLeft;
+        //            if (value.Length <= expectedDigits)
+        //            {
+        //                int padLeft = expectedDigits - value.Length;
+        //                int newStart = start - padLeft;
 
-                        if (newStart >= 0 && end <= rawData.Length)
-                        {
-                            digits.Add((newStart, newStart + expectedDigits, value, padLeft));
-                        }
-                    }
+        //                if (newStart >= 0 && end <= rawData.Length)
+        //                {
+        //                    digits.Add((newStart, newStart + expectedDigits, value, padLeft));
+        //                }
+        //            }
 
-                    i = end - 1;
-                }
-            }
+        //            i = end - 1;
+        //        }
+        //    }
 
-            // 🧠 เลือกกลุ่มตัวเลขที่อยู่ใกล้ center ที่สุด (และอยู่ในช่วง valid)
-            var best = digits
-                .Where(d => d.start >= 0 && d.end <= rawData.Length)
-                .OrderBy(d => Math.Abs((d.start + d.end) / 2 - center))
-                .FirstOrDefault();
+        //    // 🧠 เลือกกลุ่มตัวเลขที่อยู่ใกล้ center ที่สุด (และอยู่ในช่วง valid)
+        //    var best = digits
+        //        .Where(d => d.start >= 0 && d.end <= rawData.Length)
+        //        .OrderBy(d => Math.Abs((d.start + d.end) / 2 - center))
+        //        .FirstOrDefault();
 
-            logger?.Log($"ข้อมูลที่ได้รับ: \"{rawData}\" (ความยาว: {rawData.Length})");
+        //    logger?.Log($"ข้อมูลที่ได้รับ: \"{rawData}\" (ความยาว: {rawData.Length})");
 
-            if (best != default)
-            {
-                string rawDigits = rawData.Substring(best.start, best.end - best.start);
-                logger?.Log($"→ Start: {best.start}, End: {best.end}, Value: '{best.value}' (padded {best.padLeft} left)");
-                SuggestedWeightRangeUpdated?.Invoke(best.start, best.end); // 🔹 ส่งค่าไปยัง MainWindow
+        //    if (best != default)
+        //    {
+        //        string rawDigits = rawData.Substring(best.start, best.end - best.start);
+        //        logger?.Log($"→ Start: {best.start}, End: {best.end}, Value: '{best.value}' (padded {best.padLeft} left)");
+        //        SuggestedWeightRangeUpdated?.Invoke(best.start, best.end); // 🔹 ส่งค่าไปยัง MainWindow
 
-            }
-            else
-            {
-                logger?.Log("ไม่พบตำแหน่งตัวเลขที่ตรงตามเงื่อนไขสำหรับการแนะนำตำแหน่ง.");
-                SuggestedWeightRangeUpdated?.Invoke(-1, -1); // 🔹 ส่งค่า -1 เมื่อไม่พบตำแหน่งที่เหมาะสม
-            }
-        }
+        //    }
+        //    else
+        //    {
+        //        logger?.Log("ไม่พบตำแหน่งตัวเลขที่ตรงตามเงื่อนไขสำหรับการแนะนำตำแหน่ง.");
+        //        SuggestedWeightRangeUpdated?.Invoke(-1, -1); // 🔹 ส่งค่า -1 เมื่อไม่พบตำแหน่งที่เหมาะสม
+        //    }
+        //}
 
 
         public bool IsReadingStable(double newWeight)
